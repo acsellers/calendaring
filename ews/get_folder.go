@@ -1,42 +1,51 @@
 package ews
 
-import (
-	"bytes"
-	"encoding/xml"
-	"fmt"
-	"io"
-)
+import "encoding/xml"
 
-func (c *Conn) GetFolder(name string) error {
-	r := GetFolderReq{}
+func (c *Conn) GetFolder(name string) (*GetFolderResponse, error) {
+	r := GetFolderRequest{}
 	r.Xmlns = "http://schemas.microsoft.com/exchange/services/2006/messages"
 
 	r.Shape.BaseShape = "Default"
-	r.ParentFolderIds.Folder.Id = "calendar"
+	r.FolderIds.DistinguishedFolderIds = append(
+		r.FolderIds.DistinguishedFolderIds,
+		DistinguishedFolderId{Id: "calendar"},
+	)
 
-	body, err := c.Do(r)
-	if err != nil {
-		return err
-	}
-	b := &bytes.Buffer{}
-	io.Copy(b, body)
-	fmt.Println(b.String())
-	return nil
+	resp := &GetFolderResponse{}
+	err := c.Do(r, resp)
+	return resp, err
 }
 
-type GetFolderReq struct {
-	XMLName xml.Name `xml:"GetFolder"`
+type GetFolderRequest struct {
+	XMLName xml.Name `xml:"m:GetFolder"`
 	Xmlns   string   `xml:"xmlns,attr"`
 
 	Shape struct {
-		XMLName   xml.Name `xml:"FolderShape"`
+		XMLName   xml.Name `xml:"m:FolderShape"`
 		BaseShape string   `xml:"t:BaseShape"`
 	}
-	ParentFolderIds struct {
-		XMLName xml.Name `xml:"ParentFolderIds"`
-		Folder  struct {
-			XMLName xml.Name `xml:"t:DistinguishedFolderId"`
-			Id      string   `xml:"Id,attr"`
+	FolderIds struct {
+		XMLName                xml.Name `xml:"m:FolderIds"`
+		DistinguishedFolderIds []DistinguishedFolderId
+	}
+}
+
+type DistinguishedFolderId struct {
+	XMLName xml.Name `xml:"t:DistinguishedFolderId"`
+	Id      string   `xml:"Id,attr"`
+}
+
+type GetFolderResponse struct {
+	XMLName  xml.Name `xml:"GetFolderResponse"`
+	Messages struct {
+		XMLName       xml.Name `xml:"ResponseMessages"`
+		ResponseClass string   `xml:"ResponseClass,attr"`
+		Message       struct {
+			XMLName       xml.Name          `xml:"GetFolderResponseMessage"`
+			ResponseClass string            `xml:"ResponseClass,attr"`
+			ResponseCode  string            `xml:"ResponseCode"`
+			Calendars     []EWSCalendarInfo `xml:"Folders>CalendarFolder"`
 		}
 	}
 }

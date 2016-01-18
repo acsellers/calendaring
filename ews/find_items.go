@@ -1,15 +1,12 @@
 package ews
 
 import (
-	"bytes"
 	"encoding/xml"
-	"fmt"
-	"io"
 	"time"
 )
 
-func (c *Conn) FindItemsCalendar() error {
-	r := FindItemCalendarReq{}
+func (c *Conn) FindItemsCalendar() (*FindItemResponse, error) {
+	r := FindItemCalendarRequest{}
 	r.Traversal = "Shallow"
 	r.Xmlns = "http://schemas.microsoft.com/exchange/services/2006/messages"
 	r.XmlnsT = "http://schemas.microsoft.com/exchange/services/2006/types"
@@ -19,17 +16,12 @@ func (c *Conn) FindItemsCalendar() error {
 	r.CalendarView.StartDate = time.Now().AddDate(0, -1, 0).Format(time.RFC3339)
 	r.CalendarView.EndDate = time.Now().AddDate(0, 3, 0).Format(time.RFC3339)
 
-	body, err := c.Do(r)
-	if err != nil {
-		return err
-	}
-	b := &bytes.Buffer{}
-	io.Copy(b, body)
-	fmt.Println(b.String())
-	return nil
+	resp := &FindItemResponse{}
+	err := c.Do(r, resp)
+	return resp, err
 }
 
-type FindItemCalendarReq struct {
+type FindItemCalendarRequest struct {
 	XMLName   xml.Name `xml:"FindItem"`
 	Xmlns     string   `xml:"xmlns,attr"`
 	XmlnsT    string   `xml:"xmlns:t,attr"`
@@ -50,6 +42,26 @@ type FindItemCalendarReq struct {
 		Folder  struct {
 			XMLName xml.Name `xml:"t:DistinguishedFolderId"`
 			Id      string   `xml:"Id,attr"`
+		}
+	}
+}
+
+type FindItemResponse struct {
+	XMLName  xml.Name `xml:"FindItemResponse"`
+	Messages struct {
+		XMLName xml.Name `xml:"ResponseMessages"`
+		Message struct {
+			XMLName      xml.Name `xml:"FindItemResponseMessage"`
+			ResponseCode string   `xml:"ResponseCode"`
+			RootFolder   struct {
+				XMLName                 xml.Name `xml:"RootFolder"`
+				TotalItemsInView        string   `xml:"TotalItemsInView,attr"`
+				IncludesLastItemInRange string   `xml:"IncludesLastItemInRange,attr"`
+				Items                   []struct {
+					Id        string `xml:"Id,attr"`
+					ChangeKey string `xml:"ChangeKey,attr"`
+				} `xml:"Items>CalendarItem"`
+			}
 		}
 	}
 }
