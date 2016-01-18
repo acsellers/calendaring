@@ -1,12 +1,19 @@
 package main
 
-import "github.com/acsellers/calendars/ews"
+import (
+	"fmt"
+
+	"github.com/acsellers/calendars/ews"
+)
 
 func main() {
 	c := ews.Conn{
 		Username: "user",
 		Password: "password",
 		Host:     "https://outlook.office365.com/EWS/Exchange.asmx",
+		Debug:    true,
 	}
-	c.Do()
+	fmt.Println(c.FindFolders())
+	fmt.Println(c.GetFolder("calendar"))
+	fmt.Println(c.FindItemsCalendar())
 }
