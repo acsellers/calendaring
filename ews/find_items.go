@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func (c *Conn) FindItemsCalendar() (*FindItemResponse, error) {
+func (c *Conn) FindCalendarItems() (*FindItemResponse, error) {
 	r := FindItemCalendarRequest{}
 	r.Traversal = "Shallow"
 	r.Xmlns = "http://schemas.microsoft.com/exchange/services/2006/messages"
@@ -48,19 +48,17 @@ type FindItemCalendarRequest struct {
 
 type FindItemResponse struct {
 	XMLName  xml.Name `xml:"FindItemResponse"`
+	XmlnsT   string   `xml:"xmlns:t,attr"`
 	Messages struct {
 		XMLName xml.Name `xml:"ResponseMessages"`
 		Message struct {
 			XMLName      xml.Name `xml:"FindItemResponseMessage"`
 			ResponseCode string   `xml:"ResponseCode"`
 			RootFolder   struct {
-				XMLName                 xml.Name `xml:"RootFolder"`
-				TotalItemsInView        string   `xml:"TotalItemsInView,attr"`
-				IncludesLastItemInRange string   `xml:"IncludesLastItemInRange,attr"`
-				Items                   []struct {
-					Id        string `xml:"Id,attr"`
-					ChangeKey string `xml:"ChangeKey,attr"`
-				} `xml:"Items>CalendarItem"`
+				XMLName                 xml.Name    `xml:"RootFolder"`
+				TotalItemsInView        string      `xml:"TotalItemsInView,attr"`
+				IncludesLastItemInRange string      `xml:"IncludesLastItemInRange,attr"`
+				Items                   []EWSItemId `xml:"Items>CalendarItem>ItemId"`
 			}
 		}
 	}

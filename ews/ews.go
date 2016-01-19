@@ -57,11 +57,15 @@ func (c *Conn) Do(body interface{}, response interface{}) error {
 	if err != nil {
 		return err
 	}
-	if response == nil || true {
+	if response == nil {
 		fmt.Println(string(se.Body.Data))
 		return nil
 	}
-	return xml.Unmarshal(se.Body.Data, response)
+	err = xml.Unmarshal(se.Body.Data, response)
+	if err != nil && c.Debug {
+		fmt.Println(string(se.Body.Data))
+	}
+	return err
 }
 
 type SoapEnvelope struct {
@@ -112,4 +116,22 @@ type EWSCalendarInfo struct {
 	DisplayName      string `xml:"DisplayName"`
 	TotalCount       int    `xml:"TotalCount"`
 	ChildFolderCount int    `xml:"ChildFolderCount"`
+}
+
+type EWSItemId struct {
+	XMLName   xml.Name `xml:"ItemId"`
+	Id        string   `xml:"Id,attr"`
+	ChangeKey string   `xml:"ChangeKey,attr"`
+}
+type EWSReqItemId struct {
+	XMLName   xml.Name `xml:"t:ItemId"`
+	Id        string   `xml:"Id,attr"`
+	ChangeKey string   `xml:"ChangeKey,attr"`
+}
+
+func (eii EWSItemId) ToRequestId() EWSReqItemId {
+	return EWSReqItemId{
+		Id:        eii.Id,
+		ChangeKey: eii.ChangeKey,
+	}
 }
